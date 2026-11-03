@@ -1,114 +1,158 @@
+import { useState, useCallback } from 'react'
 
-import { useRef, useEffect, useState } from 'react'
-import * as cocoSsd from '@tensorflow-models/coco-ssd'
-import '@tensorflow/tfjs'
-import './App.css'
+import Navbar    from './components/layout/Navbar'
+import BottomNav from './components/layout/BottomNav'
+import Toast     from './components/ui/Toast'
 
-function App() {
-  const cameraURL = '/camera-stream'
-  const cameraRef = useRef(null)
-  const canvasRef = useRef(null)
-  const [model, setModel] = useState(null)
-  const [objectStatus, setObjectStatus] = useState('Loading AI model...')
-  const [detections, setDetections] = useState([])
+import Dashboard    from './pages/Dashboard'
+import CameraPage   from './pages/CameraPage'
+import AIPage       from './pages/AIPage'
+import SettingsPage from './pages/SettingsPage'
 
-  useEffect(() => {
-  async function loadModel() {
-    try {
-      setObjectStatus('Loading AI model...')
+import { useCamera }          from './hooks/useCamera'
+import { useObjectDetection } from './hooks/useObjectDetection'
+import { useFaceDetection }   from './hooks/useFaceDetection'
+import { useVoice }           from './hooks/useVoice'
 
-      const loadedModel = await cocoSsd.load()
+import './index.css'
 
-      setModel(loadedModel)
-      setObjectStatus('AI model ready!')
-
-      console.log('COCO-SSD model loaded successfully!')
-    } catch (error) {
-      console.error('Model loading failed:', error)
-      setObjectStatus('AI model failed to load')
-    }
-  }
-
-  loadModel()
-}, [])
-
-  useEffect(() => {
-  console.log('Camera element:', cameraRef.current)
-  console.log('Canvas element:', canvasRef.current)
-}, [])
-  function captureFrame() {
-  const camera = cameraRef.current
-  const canvas = canvasRef.current
-
-  if (!camera || !canvas || !camera.naturalWidth) return
-
-  const context = canvas.getContext('2d')
-
-  canvas.width = camera.naturalWidth
-  canvas.height = camera.naturalHeight
-
-  context.drawImage(camera, 0, 0)
-  console.log('Frame captured successfully!')
-  console.log('Frame size:', canvas.width, 'x', canvas.height)
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('visionai-history') || '[]') }
+  catch { return [] }
 }
 
-async function detectObjects() {
-  if (!model) {
-    console.log('AI model is not ready!')
-    return
-  }
-
-  const canvas = canvasRef.current
-
-  const predictions = await model.detect(canvas, 20, 0.25)
-  setDetections(predictions)
-
-  console.log('Detected objects:', predictions)
+function loadSettings() {
+  try { return JSON.parse(localStorage.getItem('visionai-settings') || '{}') }
+  catch { return {} }
 }
+
+export default function App() {
+  const [page, setPage] = useState('dashboard')
+  const [toasts, setToasts] = useState([])
+
+  const showToast = useCallback((message, type = 'info') => {
+    const id = Date.now() + Math.random()
+    setToasts(prev => [...prev, { id, message, type }])
+  }, [])
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
+  const [detectionHistory, setDetectionHistory] = useState(loadHistory)
+  const [settings,         setSettingsState]    = useState(loadSettings)
+
+  const camera      = useCamera({ showToast })
+  const detection   = useObjectDetection({ settings })
+  const faceDetect  = useFaceDetection()
+  const voice       = useVoice()
+
+  const addToHistory = useCallback((predictions) => {
+    if (!predictions.length) return
+    const now     = Date.now()
+    const entries = predictions.map((p, i) => ({
+      id:    now + i,
+      class: p.class,
+      score: p.score,
+      time:  now,
+    }))
+    setDetectionHistory(prev => {
+      const updated = [...entries, ...prev].slice(0, 150)
+      localStorage.setItem('visionai-history', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const clearHistory = useCallback(() => {
+    setDetectionHistory([])
+    localStorage.removeItem('visionai-history')
+    showToast('Detection history cleared', 'success')
+  }, [showToast])
+
+  const updateSettings = useCallback((patch) => {
+    setSettingsState(prev => {
+      const next = { ...prev, ...patch }
+      localStorage.setItem('visionai-settings', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const pages = {
+    dashboard: (
+      <Dashboard
+        camera={camera}
+        detection={detection}
+        faceDetection={faceDetect}
+        detectionHistory={detectionHistory}
+        setPage={setPage}
+      />
+    ),
+    camera: (
+      <CameraPage
+        camera={camera}
+        showToast={showToast}
+      />
+    ),
+    ai: (
+      <AIPage
+        camera={camera}
+        detection={detection}
+        faceDetection={faceDetect}
+        voice={voice}
+        detectionHistory={detectionHistory}
+        addToHistory={addToHistory}
+        clearHistory={clearHistory}
+        settings={settings}
+        showToast={showToast}
+      />
+    ),
+    settings: (
+      <SettingsPage
+        camera={camera}
+        voice={voice}
+        settings={settings}
+        updateSettings={updateSettings}
+        clearHistory={clearHistory}
+        showToast={showToast}
+      />
+    ),
+  }
 
   return (
-    <div className="app">
-      <header>
-        <h1>VisionAI</h1>
-        <p>ESP32-CAM Intelligent Vision System</p>
-      </header>
+    <div className="app-shell">
+      <Navbar page={page} setPage={setPage} />
 
-      <main>
-        <section className="camera-section">
-          <h2>Live Camera Feed</h2>
+      <div className="app-body">
+        <div className="mobile-topbar">
+          <div className="sidebar-logo">
+            <div className="logo-icon" style={{ width: 30, height: 30, fontSize: 14 }}>V</div>
+            <span className="logo-name" style={{ fontSize: 15 }}>VisionAI</span>
+          </div>
+          {camera.isConnected && (
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              color: 'var(--success)',
+              background: 'var(--success-light)',
+              border: '1px solid var(--success-border)',
+              padding: '3px 9px',
+              borderRadius: 'var(--r-full)',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', animation: 'pulse-green 2s infinite' }} />
+              LIVE
+            </span>
+          )}
+        </div>
 
-          <img
-            ref={cameraRef}
-            src={cameraURL}
-            alt="ESP32 Camera Live Stream"
-          />
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+        <main className="app-main">
+          <div className="page-content">
+            {pages[page] ?? pages.dashboard}
+          </div>
+        </main>
+      </div>
 
-          <button onClick={() => {
-            captureFrame()
-            detectObjects()
-          }}
-          >
-          </button>
-
-        </section>
-        
-
-        <section className="detection-section">
-          <h2>AI Detection</h2>
-          <p>Object Detection: {objectStatus}</p>
-
-            {detections.map((item, index) => (
-              <p key={index}>
-              {item.class} — {(item.score * 100).toFixed(1)}%
-          </p>
-          ))}
-          <p>Face Detection: Initializing...</p>
-          <p>Voice Assistant: Waiting...</p>
-        </section>
-      </main>
+      <BottomNav page={page} setPage={setPage} />
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
-
-export default App
