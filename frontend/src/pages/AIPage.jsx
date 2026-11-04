@@ -19,17 +19,35 @@ export default function AIPage({
 
   const [faceRunning, setFaceRunning] = useState(false)
 
-  const handleDetectionBatch = useCallback((predictions) => {
-    if (predictions.length === 0) return
+  const handleDetectionBatch = useCallback(async (predictions) => {
+  // Update object history and voice only when objects are detected
+  if (predictions.length > 0) {
     addToHistory(predictions)
+
     const seen = new Set()
+
     predictions.forEach(pred => {
       if (!seen.has(pred.class)) {
         seen.add(pred.class)
         voice.announceDetection(pred.class)
       }
     })
-  }, [addToHistory, voice])
+  }
+
+  // Check whether a person is currently visible
+  const personDetected = predictions.some(
+    pred => pred.class === 'person'
+  )
+
+  if (personDetected && faceDetection.faceStatus === 'ready') {
+    // Automatically check the current camera frame for faces
+    await faceDetection.detectFaces(imgRef, null)
+  } else {
+    // No person detected: reset face count immediately
+    faceDetection.clearFaces()
+  }
+
+}, [addToHistory, voice, faceDetection, imgRef])
 
   const handleStartDetection = useCallback(() => {
     if (!camera.isConnected) {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 import Navbar    from './components/layout/Navbar'
 import BottomNav from './components/layout/BottomNav'
@@ -46,6 +46,17 @@ export default function App() {
   const detection   = useObjectDetection({ settings })
   const faceDetect  = useFaceDetection()
   const voice       = useVoice()
+
+  useEffect(() => {
+  if (!camera.isConnected) {
+    detection.stopDetection()
+    faceDetect.clearFaces()
+  }
+}, [
+  camera.isConnected,
+  detection.stopDetection,
+  faceDetect.clearFaces
+])
 
   const addToHistory = useCallback((predictions) => {
     if (!predictions.length) return

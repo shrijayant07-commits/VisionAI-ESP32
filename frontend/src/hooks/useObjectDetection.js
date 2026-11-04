@@ -151,7 +151,7 @@ export function useObjectDetection({ settings = {} }) {
       const results = await detectOnce(imgRef, overlayCanvasRef)
       if (isDetectingRef.current) {
         setDetections(results)
-        if (results.length > 0 && onDetection) onDetection(results)
+        if (onDetection) onDetection(results)
       }
 
       if (isDetectingRef.current) {
