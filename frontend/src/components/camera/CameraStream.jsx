@@ -8,6 +8,7 @@ export default function CameraStream({
   isConnecting,
   onLoad,
   onError,
+  onStartDemo,
   showControls = true,
 }) {
   const handleRefresh = useCallback(() => {
@@ -82,7 +83,17 @@ export default function CameraStream({
               <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
             </svg>
             <p style={{ fontSize: 14, fontWeight: 500 }}>No camera connected</p>
-            <p style={{ fontSize: 12 }}>Enter your ESP32-CAM IP address to start</p>
+            <p style={{ fontSize: 12 }}>Enter your ESP32-CAM IP address or test with demo</p>
+            {onStartDemo && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                style={{ marginTop: 6 }}
+                onClick={onStartDemo}
+              >
+                🎮 Start Demo Stream
+              </button>
+            )}
           </div>
         )}
       </div>

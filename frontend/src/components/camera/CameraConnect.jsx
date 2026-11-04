@@ -91,7 +91,7 @@ export default function CameraConnect({ camera }) {
         </span>
       </div>
 
-      <div className="connect-btn-row">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
         {!isConnected ? (
           <>
             <button
@@ -111,13 +111,19 @@ export default function CameraConnect({ camera }) {
               )}
             </button>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+
             <button
               type="button"
               className="btn btn-outline btn-full"
-              style={{ marginTop: 8 }}
+              style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-light)' }}
               onClick={() => camera.connectDemo()}
             >
-              🎮 Try Demo Feed (Test Offline)
+              🎮 Try Demo Feed (Test Without ESP32)
             </button>
           </>
         ) : (
@@ -128,7 +134,7 @@ export default function CameraConnect({ camera }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-            Disconnect {camera.isDemo ? '(Demo)' : ''}
+            Disconnect {camera.isDemo ? '(Demo Mode)' : ''}
           </button>
         )}
       </div>

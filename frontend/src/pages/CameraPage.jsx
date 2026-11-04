@@ -48,6 +48,7 @@ export default function CameraPage({ camera }) {
               isConnecting={camera.isConnecting}
               onLoad={camera.handleConnected}
               onError={camera.handleError}
+              onStartDemo={camera.connectDemo}
               showControls={true}
             />
           </div>

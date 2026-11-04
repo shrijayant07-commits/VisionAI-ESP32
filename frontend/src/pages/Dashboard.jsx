@@ -126,6 +126,15 @@ export default function Dashboard({ camera, detection, faceDetection, detectionH
             >
               🤖 AI Detection
             </button>
+            {!isConnected && (
+              <button
+                className="btn btn-outline"
+                style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-light)' }}
+                onClick={() => { camera.connectDemo(); setPage('ai'); }}
+              >
+                🎮 Try Demo Feed
+              </button>
+            )}
           </div>
         </div>
 

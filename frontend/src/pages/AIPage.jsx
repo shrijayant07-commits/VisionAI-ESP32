@@ -123,6 +123,7 @@ export default function AIPage({
               isConnecting={camera.isConnecting}
               onLoad={camera.handleConnected}
               onError={camera.handleError}
+              onStartDemo={camera.connectDemo}
               showControls={true}
             />
           </div>
@@ -181,6 +182,17 @@ export default function AIPage({
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Detect Now
               </button>
+
+              {!camera.isConnected && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-light)' }}
+                  onClick={() => camera.connectDemo()}
+                >
+                  🎮 Start Demo Feed
+                </button>
+              )}
             </div>
 
             <div style={{ marginTop: 16 }}>
