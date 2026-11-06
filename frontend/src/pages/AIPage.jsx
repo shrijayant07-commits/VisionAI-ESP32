@@ -29,7 +29,7 @@ export default function AIPage({
     predictions.forEach(pred => {
       if (!seen.has(pred.class)) {
         seen.add(pred.class)
-        voice.announceDetection(pred.class)
+        voice.announceDetection(pred.class, pred.position)
       }
     })
   }

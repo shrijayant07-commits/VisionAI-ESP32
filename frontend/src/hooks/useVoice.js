@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { generateResponse } from '../utils/responseGenerator'
 import {
   buildTamilPhrase,
   TAMIL_SYSTEM_PHRASES,
@@ -56,22 +57,31 @@ export function useVoice() {
     window.speechSynthesis.speak(utterance)
   }, [language])
 
-  const announceDetection = useCallback((objectClass) => {
-    if (!voiceEnabled) return
+  const announceDetection = useCallback((objectClass, position = 'centre') => {
+  if (!voiceEnabled) return
 
-    const now  = Date.now()
-    const last = lastAnnouncedRef.current[objectClass] || 0
-    if (now - last < COOLDOWN_MS) return
+  const now = Date.now()
+  const last = lastAnnouncedRef.current[objectClass] || 0
 
-    lastAnnouncedRef.current[objectClass] = now
+  if (now - last < COOLDOWN_MS) return
 
-    if (language === 'ta') {
-      speak(buildTamilPhrase(objectClass))
-    } else {
-      const name = objectClass.charAt(0).toUpperCase() + objectClass.slice(1)
-      speak(`${name} detected.`)
-    }
-  }, [voiceEnabled, language, speak])
+  lastAnnouncedRef.current[objectClass] = now
+
+  const response = generateResponse({
+    name: objectClass,
+    position,
+    language,
+  })
+
+  if (response) {
+    speak(response)
+  } else if (language === 'ta') {
+    speak(buildTamilPhrase(objectClass))
+  } else {
+    const name = objectClass.charAt(0).toUpperCase() + objectClass.slice(1)
+    speak(`${name} detected.`)
+  }
+}, [voiceEnabled, language, speak])
 
   const announceSystem = useCallback((eventKey) => {
     if (!voiceEnabled) return
